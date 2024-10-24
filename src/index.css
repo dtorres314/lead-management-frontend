@@ -130,6 +130,21 @@ button {
   font-size: 16px;
 }
 
+/* Add Lead Button inside pagination */
+.add-lead-button {
+  margin-left: 10px;
+  background-color: #28a745;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.add-lead-button:hover {
+  background-color: #218838;
+}
+
 .pagination-controls button {
   padding: 8px 12px;
   margin: 0 5px;

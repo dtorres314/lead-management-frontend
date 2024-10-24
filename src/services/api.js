@@ -96,3 +96,27 @@ export const fetchStatuses = () => {
         withCredentials: true,
     });
 };
+
+// Add a new lead
+export const addLead = (data) => {
+    const token = localStorage.getItem('token');
+    return axios.post(`${API_URL}/api/leads`, data, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+            'X-XSRF-TOKEN': Cookies.get('XSRF-TOKEN'),
+        },
+        withCredentials: true,
+    });
+};
+
+// Update an existing lead
+export const updateLead = (id, data) => {
+    const token = localStorage.getItem('token');
+    return axios.put(`${API_URL}/api/leads/${id}`, data, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+            'X-XSRF-TOKEN': Cookies.get('XSRF-TOKEN'),
+        },
+        withCredentials: true,
+    });
+};

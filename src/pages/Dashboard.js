@@ -1,27 +1,29 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { fetchLeads, fetchStatuses, logout } from '../services/api';
+import { fetchLeads, fetchStatuses, addLead, updateLead, logout } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import Modal from '../components/Modal';  // Import the Modal component
 
 const Dashboard = () => {
     const [leads, setLeads] = useState([]);
-    const [statuses, setStatuses] = useState([]); // To store lead statuses
-    const [selectedStatus, setSelectedStatus] = useState(''); // Status filter
+    const [statuses, setStatuses] = useState([]);
+    const [selectedStatus, setSelectedStatus] = useState('');
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [loading, setLoading] = useState(false);
-    const [perPage, setPerPage] = useState(10);  // Default pagination size
-    const [searchQuery, setSearchQuery] = useState('');  // Search query
-    const [sortBy, setSortBy] = useState('id');  // Column to sort by
-    const [sortOrder, setSortOrder] = useState('asc');  // Sort order (asc/desc)
+    const [perPage, setPerPage] = useState(10);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [formData, setFormData] = useState({ name: '', email: '', phone: '', lead_status_id: '' });
+    const [editingLead, setEditingLead] = useState(null);
+    const [showModal, setShowModal] = useState(false);
 
     const { logout: logoutContext } = useContext(AuthContext);
     const navigate = useNavigate();
 
-    // Fetch lead data with pagination, search, filter, and sorting
+    // Fetch lead data
     const fetchLeadsData = () => {
         setLoading(true);
-        fetchLeads(page, perPage, searchQuery, selectedStatus, sortBy, sortOrder)
+        fetchLeads(page, perPage, searchQuery, selectedStatus)
             .then(response => {
                 setLeads(response.data.data);
                 setTotalPages(response.data.last_page);
@@ -33,7 +35,7 @@ const Dashboard = () => {
             });
     };
 
-    // Fetch lead statuses for the filter dropdown
+    // Fetch lead statuses for filtering
     const fetchStatusesData = () => {
         fetchStatuses().then(response => {
             setStatuses(response.data);
@@ -42,8 +44,8 @@ const Dashboard = () => {
 
     useEffect(() => {
         fetchLeadsData();
-        fetchStatusesData(); // Fetch statuses when the component loads
-    }, [page, perPage, selectedStatus, sortBy, sortOrder]);
+        fetchStatusesData();
+    }, [page, perPage, selectedStatus]);
 
     const handlePrev = () => {
         if (page > 1) setPage(page - 1);
@@ -62,7 +64,7 @@ const Dashboard = () => {
 
     const handlePerPageChange = (e) => {
         setPerPage(parseInt(e.target.value));
-        setPage(1);  // Reset to page 1 when pagination size changes
+        setPage(1);
     };
 
     const handleSearchClick = () => {
@@ -72,17 +74,33 @@ const Dashboard = () => {
 
     const handleFilterChange = (e) => {
         setSelectedStatus(e.target.value);
-        setPage(1);  // Reset to page 1 when the filter changes
+        setPage(1);
     };
 
-    const handleSort = (column) => {
-        if (sortBy === column) {
-            // Toggle sort order
-            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    const handleAddLead = () => {
+        setEditingLead(null);
+        setFormData({ name: '', email: '', phone: '', lead_status_id: '' });
+        setShowModal(true);
+    };
+
+    const handleEditLead = (lead) => {
+        setEditingLead(lead.id);
+        setFormData({ name: lead.name, email: lead.email, phone: lead.phone, lead_status_id: lead.lead_status_id });
+        setShowModal(true);
+    };
+
+    const handleFormSubmit = (e) => {
+        e.preventDefault();
+        if (editingLead) {
+            updateLead(editingLead, formData).then(() => {
+                setShowModal(false);
+                fetchLeadsData();
+            });
         } else {
-            // Set new column and reset to ascending order
-            setSortBy(column);
-            setSortOrder('asc');
+            addLead(formData).then(() => {
+                setShowModal(false);
+                fetchLeadsData();
+            });
         }
     };
 
@@ -93,10 +111,6 @@ const Dashboard = () => {
         });
     };
 
-    if (loading) {
-        return <div className="loading-spinner">Loading...</div>;
-    }
-
     return (
         <div className="dashboard-container">
             <nav className="dashboard-nav">
@@ -104,7 +118,6 @@ const Dashboard = () => {
                 <button onClick={handleLogout} className="logout-button">Logout</button>
             </nav>
 
-            {/* Search Field with Button */}
             <div className="search-container">
                 <input
                     type="text"
@@ -116,7 +129,6 @@ const Dashboard = () => {
                 <button onClick={handleSearchClick} className="search-button">Search</button>
             </div>
 
-            {/* Filter by Lead Status */}
             <div className="filter-container">
                 <label htmlFor="statusFilter">Filter by Status:</label>
                 <select id="statusFilter" value={selectedStatus} onChange={handleFilterChange}>
@@ -127,15 +139,15 @@ const Dashboard = () => {
                 </select>
             </div>
 
-            {/* Table to display leads */}
             <table className="leads-table">
                 <thead>
                     <tr>
-                        <th onClick={() => handleSort('id')}>ID {sortBy === 'id' && (sortOrder === 'asc' ? '↑' : '↓')}</th>
-                        <th onClick={() => handleSort('name')}>Name {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}</th>
-                        <th onClick={() => handleSort('email')}>Email {sortBy === 'email' && (sortOrder === 'asc' ? '↑' : '↓')}</th>
-                        <th onClick={() => handleSort('phone')}>Phone {sortBy === 'phone' && (sortOrder === 'asc' ? '↑' : '↓')}</th>
-                        <th onClick={() => handleSort('status')}>Status {sortBy === 'status' && (sortOrder === 'asc' ? '↑' : '↓')}</th>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Status</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -146,12 +158,15 @@ const Dashboard = () => {
                             <td>{lead.email}</td>
                             <td>{lead.phone}</td>
                             <td>{lead.status.name}</td>
+                            <td>
+                                <button onClick={() => handleEditLead(lead)}>Edit</button>
+                            </td>
                         </tr>
                     ))}
                 </tbody>
             </table>
 
-            {/* Pagination Controls */}
+            {/* Pagination Controls and Add Lead Button */}
             <div className="pagination-controls">
                 <div className="pagination-size">
                     <label htmlFor="perPage">Per Page:</label>
@@ -188,7 +203,50 @@ const Dashboard = () => {
                 )}
 
                 <button onClick={handleNext} disabled={page >= totalPages}>Next</button>
+
+                {/* Move Add Lead Button here */}
+                <button onClick={handleAddLead} className="add-lead-button">Add Lead</button>
             </div>
+
+            {showModal && (
+                <Modal onClose={() => setShowModal(false)}>
+                    <form onSubmit={handleFormSubmit} className="lead-form">
+                        <h2>{editingLead ? 'Edit Lead' : 'Add New Lead'}</h2>
+                        <input
+                            type="text"
+                            value={formData.name}
+                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                            placeholder="Name"
+                            required
+                        />
+                        <input
+                            type="email"
+                            value={formData.email}
+                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                            placeholder="Email"
+                            required
+                        />
+                        <input
+                            type="text"
+                            value={formData.phone}
+                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                            placeholder="Phone"
+                            required
+                        />
+                        <select
+                            value={formData.lead_status_id}
+                            onChange={(e) => setFormData({ ...formData, lead_status_id: e.target.value })}
+                            required
+                        >
+                            <option value="">Select Status</option>
+                            {statuses.map(status => (
+                                <option key={status.id} value={status.id}>{status.name}</option>
+                            ))}
+                        </select>
+                        <button type="submit">{editingLead ? 'Update Lead' : 'Add Lead'}</button>
+                    </form>
+                </Modal>
+            )}
         </div>
     );
 };
