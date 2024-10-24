@@ -73,10 +73,10 @@ export const getAuthenticatedUser = () => {
     });
 };
 
-// Fetch Leads with Pagination
-export const fetchLeads = (page = 1, perPage = 10) => {
+// Fetch Leads with Pagination and Search
+export const fetchLeads = (page = 1, perPage = 10, search = '') => {
     const token = localStorage.getItem('token');
-    return axios.get(`${API_URL}/api/leads?page=${page}&perPage=${perPage}`, {
+    return axios.get(`${API_URL}/api/leads?page=${page}&perPage=${perPage}&search=${search}`, {
         headers: {
             Authorization: `Bearer ${token}`,
             'X-XSRF-TOKEN': Cookies.get('XSRF-TOKEN'),
