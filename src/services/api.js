@@ -73,10 +73,22 @@ export const getAuthenticatedUser = () => {
     });
 };
 
-// Fetch Leads with Pagination and Search
-export const fetchLeads = (page = 1, perPage = 10, search = '') => {
+// Fetch Leads with Pagination, Search, and Filter
+export const fetchLeads = (page = 1, perPage = 10, search = '', status = '') => {
     const token = localStorage.getItem('token');
-    return axios.get(`${API_URL}/api/leads?page=${page}&perPage=${perPage}&search=${search}`, {
+    return axios.get(`${API_URL}/api/leads?page=${page}&perPage=${perPage}&search=${search}&status=${status}`, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+            'X-XSRF-TOKEN': Cookies.get('XSRF-TOKEN'),
+        },
+        withCredentials: true,
+    });
+};
+
+// Fetch Lead Statuses for filtering
+export const fetchStatuses = () => {
+    const token = localStorage.getItem('token');
+    return axios.get(`${API_URL}/api/lead-statuses`, {
         headers: {
             Authorization: `Bearer ${token}`,
             'X-XSRF-TOKEN': Cookies.get('XSRF-TOKEN'),
