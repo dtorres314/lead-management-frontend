@@ -1,25 +1,27 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { fetchLeads, fetchStatuses, logout } from '../services/api'; // Import fetchLeads and fetchStatuses APIs
+import { fetchLeads, fetchStatuses, logout } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 
 const Dashboard = () => {
     const [leads, setLeads] = useState([]);
-    const [statuses, setStatuses] = useState([]); // To store the lead statuses
-    const [selectedStatus, setSelectedStatus] = useState(''); // To store the selected status filter
+    const [statuses, setStatuses] = useState([]); // To store lead statuses
+    const [selectedStatus, setSelectedStatus] = useState(''); // Status filter
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [loading, setLoading] = useState(false);
     const [perPage, setPerPage] = useState(10);  // Default pagination size
-    const [searchQuery, setSearchQuery] = useState('');  // Search query state
+    const [searchQuery, setSearchQuery] = useState('');  // Search query
+    const [sortBy, setSortBy] = useState('id');  // Column to sort by
+    const [sortOrder, setSortOrder] = useState('asc');  // Sort order (asc/desc)
 
     const { logout: logoutContext } = useContext(AuthContext);
     const navigate = useNavigate();
 
-    // Fetch lead data with pagination, search, and filter
+    // Fetch lead data with pagination, search, filter, and sorting
     const fetchLeadsData = () => {
         setLoading(true);
-        fetchLeads(page, perPage, searchQuery, selectedStatus) // Pass selectedStatus to the API
+        fetchLeads(page, perPage, searchQuery, selectedStatus, sortBy, sortOrder)
             .then(response => {
                 setLeads(response.data.data);
                 setTotalPages(response.data.last_page);
@@ -41,7 +43,7 @@ const Dashboard = () => {
     useEffect(() => {
         fetchLeadsData();
         fetchStatusesData(); // Fetch statuses when the component loads
-    }, [page, perPage, selectedStatus]);
+    }, [page, perPage, selectedStatus, sortBy, sortOrder]);
 
     const handlePrev = () => {
         if (page > 1) setPage(page - 1);
@@ -71,6 +73,17 @@ const Dashboard = () => {
     const handleFilterChange = (e) => {
         setSelectedStatus(e.target.value);
         setPage(1);  // Reset to page 1 when the filter changes
+    };
+
+    const handleSort = (column) => {
+        if (sortBy === column) {
+            // Toggle sort order
+            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+        } else {
+            // Set new column and reset to ascending order
+            setSortBy(column);
+            setSortOrder('asc');
+        }
     };
 
     const handleLogout = () => {
@@ -118,11 +131,11 @@ const Dashboard = () => {
             <table className="leads-table">
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Phone</th>
-                        <th>Status</th>
+                        <th onClick={() => handleSort('id')}>ID {sortBy === 'id' && (sortOrder === 'asc' ? '↑' : '↓')}</th>
+                        <th onClick={() => handleSort('name')}>Name {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}</th>
+                        <th onClick={() => handleSort('email')}>Email {sortBy === 'email' && (sortOrder === 'asc' ? '↑' : '↓')}</th>
+                        <th onClick={() => handleSort('phone')}>Phone {sortBy === 'phone' && (sortOrder === 'asc' ? '↑' : '↓')}</th>
+                        <th onClick={() => handleSort('status')}>Status {sortBy === 'status' && (sortOrder === 'asc' ? '↑' : '↓')}</th>
                     </tr>
                 </thead>
                 <tbody>

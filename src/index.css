@@ -189,3 +189,13 @@ button {
   border-radius: 4px;
   font-size: 16px;
 }
+
+/* Table Header Sorting */
+.leads-table th {
+  cursor: pointer;
+  text-align: left;
+}
+
+.leads-table th:hover {
+  background-color: #f1f1f1;
+}
